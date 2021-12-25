@@ -137,6 +137,14 @@ func LogIn(resp http.ResponseWriter, req *http.Request, client *mongo.Client, ct
 
 }
 
+func GetUser(email string, client *mongo.Client, collection *mongo.Collection) api.Response {
+	return api.Response{}
+}
+
+func GetUsers(client *mongo.Client, collection *mongo.Collection) api.Response {
+	return api.Response{}
+}
+
 func CheckEmail(email string, client *mongo.Client, collection *mongo.Collection) bool {
 	var dbUser User
 	err := collection.FindOne(context.Background(), bson.M{"email": email}).Decode(&dbUser)
