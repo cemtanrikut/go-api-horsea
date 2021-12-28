@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 	"net/http"
 	"time"
 
 	api "github.com/cemtanrikut/go-api-horsea/api/user"
+	"github.com/cemtanrikut/go-api-horsea/helper"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
@@ -35,26 +35,17 @@ func main() {
 
 func LogIn(w http.ResponseWriter, r *http.Request) {
 	result := api.LogIn(w, r, client, ctx, collection)
-	jsonResult, jsonError := json.Marshal(result)
-	if jsonError != nil {
-		w.Write([]byte(jsonError.Error()))
-	}
-	w.Write(jsonResult)
+	byteRes := helper.JsonMarshal(result)
+	w.Write(byteRes)
 }
 func SignUp(w http.ResponseWriter, r *http.Request) {
 	result := api.SignUp(w, r, client, collection)
-	jsonResult, jsonError := json.Marshal(result)
-	if jsonError != nil {
-		w.Write([]byte(jsonError.Error()))
-	}
-	w.Write(jsonResult)
+	byteRes := helper.JsonMarshal(result)
+	w.Write(byteRes)
 }
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	email := mux.Vars(r)["email"]
 	result := api.GetUser(email, w, r, client, collection)
-	jsonResult, jsonError := json.Marshal(result)
-	if jsonError != nil {
-		w.Write([]byte(jsonError.Error()))
-	}
-	w.Write(jsonResult)
+	byteRes := helper.JsonMarshal(result)
+	w.Write(byteRes)
 }
