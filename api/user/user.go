@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/cemtanrikut/go-api-horsea/api"
+	"github.com/cemtanrikut/go-api-horsea/helper"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 
@@ -44,36 +45,22 @@ func SignUp(resp http.ResponseWriter, req *http.Request, client *mongo.Client, c
 
 	checkEmail := CheckEmail(user.Email, client, collection)
 	if checkEmail {
-		return api.Response{
-			Data:         http.StatusText(http.StatusUnauthorized),
-			StatusCode:   http.StatusUnauthorized,
-			ErrorMessage: "This mail is already exist.",
-		}
+		return helper.ReturnResponse(http.StatusUnauthorized, "", "This mail is already exist.")
+
 	}
 
 	_, insertErr := collection.InsertOne(context.Background(), user)
 	if insertErr != nil {
-		return api.Response{
-			Data:         http.StatusText(http.StatusBadRequest),
-			StatusCode:   http.StatusBadRequest,
-			ErrorMessage: insertErr.Error(),
-		}
+		return helper.ReturnResponse(http.StatusBadRequest, "", insertErr.Error())
 	}
 
 	jsonResult, jsonError := json.Marshal(user)
 	if jsonError != nil {
-		return api.Response{
-			Data:         http.StatusText(http.StatusInternalServerError),
-			StatusCode:   http.StatusInternalServerError,
-			ErrorMessage: jsonError.Error(),
-		}
+		return helper.ReturnResponse(http.StatusInternalServerError, "", jsonError.Error())
+
 	}
 
-	return api.Response{
-		Data:         string(jsonResult),
-		StatusCode:   http.StatusAccepted,
-		ErrorMessage: "",
-	}
+	return helper.ReturnResponse(http.StatusOK, string(jsonResult), "")
 
 }
 
@@ -87,11 +74,8 @@ func LogIn(resp http.ResponseWriter, req *http.Request, client *mongo.Client, ct
 	err := collection.FindOne(context.Background(), bson.M{"email": user.Email}).Decode(&dbUser)
 
 	if err != nil {
-		return api.Response{
-			Data:         http.StatusText(http.StatusInternalServerError),
-			StatusCode:   http.StatusInternalServerError,
-			ErrorMessage: err.Error(),
-		}
+		return helper.ReturnResponse(http.StatusInternalServerError, "", err.Error())
+
 	}
 
 	user.Password = base64.StdEncoding.EncodeToString([]byte(user.Password))
@@ -105,35 +89,19 @@ func LogIn(resp http.ResponseWriter, req *http.Request, client *mongo.Client, ct
 	//passErr := bcrypt.CompareHashAndPassword(dbPass, userPass)
 	res := bytes.Equal(userPass, dbPass)
 	if !res {
-		return api.Response{
-			Data:         http.StatusText(http.StatusBadRequest),
-			StatusCode:   http.StatusBadRequest,
-			ErrorMessage: "Wrong Password.",
-		}
+		return helper.ReturnResponse(http.StatusBadRequest, "", err.Error())
 	}
 
 	data, decodeErr := base64.StdEncoding.DecodeString(string(userPass))
 	if decodeErr != nil {
-		return api.Response{
-			Data:         http.StatusText(http.StatusInternalServerError),
-			StatusCode:   http.StatusInternalServerError,
-			ErrorMessage: decodeErr.Error(),
-		}
+		return helper.ReturnResponse(http.StatusInternalServerError, "", err.Error())
 	}
 
-	jsonData, jsonError := json.Marshal(data)
+	jsonResult, jsonError := json.Marshal(data)
 	if jsonError != nil {
-		return api.Response{
-			Data:         http.StatusText(http.StatusInternalServerError),
-			StatusCode:   http.StatusInternalServerError,
-			ErrorMessage: jsonError.Error(),
-		}
+		return helper.ReturnResponse(http.StatusInternalServerError, "", err.Error())
 	}
-	return api.Response{
-		Data:         string(jsonData),
-		StatusCode:   http.StatusAccepted,
-		ErrorMessage: "",
-	}
+	return helper.ReturnResponse(http.StatusOK, string(jsonResult), "")
 
 }
 
@@ -145,27 +113,15 @@ func GetUser(email string, resp http.ResponseWriter, req *http.Request, client *
 	err := userData.Decode(&user)
 
 	if err != nil {
-		return api.Response{
-			Data:         http.StatusText(http.StatusNotFound),
-			StatusCode:   http.StatusNotFound,
-			ErrorMessage: err.Error(),
-		}
+		return helper.ReturnResponse(http.StatusNotFound, "", err.Error())
 	}
 
-	jsonData, jsonError := json.Marshal(userData)
+	jsonResult, jsonError := json.Marshal(userData)
 	if jsonError != nil {
-		return api.Response{
-			Data:         http.StatusText(http.StatusInternalServerError),
-			StatusCode:   http.StatusInternalServerError,
-			ErrorMessage: jsonError.Error(),
-		}
+		return helper.ReturnResponse(http.StatusInternalServerError, "", err.Error())
 	}
 
-	return api.Response{
-		Data:         string(jsonData),
-		StatusCode:   http.StatusAccepted,
-		ErrorMessage: "",
-	}
+	return helper.ReturnResponse(http.StatusOK, string(jsonResult), "")
 }
 
 func GetUsers(client *mongo.Client, resp http.ResponseWriter, req *http.Request, collection *mongo.Collection) api.Response {
@@ -174,36 +130,21 @@ func GetUsers(client *mongo.Client, resp http.ResponseWriter, req *http.Request,
 
 	cursor, err := collection.Find(context.TODO(), bson.D{{}})
 	if err != nil {
-		return api.Response{
-			Data:         http.StatusText(http.StatusNotFound),
-			StatusCode:   http.StatusNotFound,
-			ErrorMessage: err.Error(),
-		}
+		return helper.ReturnResponse(http.StatusNotFound, "", err.Error())
 	}
 
 	if err := cursor.All(context.TODO(), &userList); err != nil {
 		if err != nil {
-			return api.Response{
-				Data:         http.StatusText(http.StatusInternalServerError),
-				StatusCode:   http.StatusInternalServerError,
-				ErrorMessage: err.Error(),
-			}
+			return helper.ReturnResponse(http.StatusInternalServerError, "", err.Error())
 		}
 	}
-	jData, err := json.Marshal(userList)
+	jsonResult, err := json.Marshal(userList)
 	if err != nil {
-		return api.Response{
-			Data:         http.StatusText(http.StatusInternalServerError),
-			StatusCode:   http.StatusInternalServerError,
-			ErrorMessage: err.Error(),
-		}
+		return helper.ReturnResponse(http.StatusInternalServerError, "", err.Error())
 	}
 
-	return api.Response{
-		Data:         string(jData),
-		StatusCode:   http.StatusAccepted,
-		ErrorMessage: "",
-	}
+	return helper.ReturnResponse(http.StatusOK, string(jsonResult), "")
+
 }
 
 func CheckEmail(email string, client *mongo.Client, collection *mongo.Collection) bool {
