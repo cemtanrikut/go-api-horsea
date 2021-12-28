@@ -137,8 +137,35 @@ func LogIn(resp http.ResponseWriter, req *http.Request, client *mongo.Client, ct
 
 }
 
-func GetUser(email string, client *mongo.Client, collection *mongo.Collection) api.Response {
-	return api.Response{}
+func GetUser(email string, resp http.ResponseWriter, req *http.Request, client *mongo.Client, collection *mongo.Collection) api.Response {
+	resp.Header().Set("Content-Type", "application/json")
+	var user User
+
+	userData := collection.FindOne(context.Background(), bson.M{"email": user.Email})
+	err := userData.Decode(&user)
+
+	if err != nil {
+		return api.Response{
+			Data:         http.StatusText(http.StatusNotFound),
+			StatusCode:   http.StatusNotFound,
+			ErrorMessage: err.Error(),
+		}
+	}
+
+	jsonData, jsonError := json.Marshal(userData)
+	if jsonError != nil {
+		return api.Response{
+			Data:         http.StatusText(http.StatusInternalServerError),
+			StatusCode:   http.StatusInternalServerError,
+			ErrorMessage: jsonError.Error(),
+		}
+	}
+
+	return api.Response{
+		Data:         string(jsonData),
+		StatusCode:   http.StatusAccepted,
+		ErrorMessage: "",
+	}
 }
 
 func GetUsers(client *mongo.Client, collection *mongo.Collection) api.Response {
