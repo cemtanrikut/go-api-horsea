@@ -49,3 +49,9 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	byteRes := helper.JsonMarshal(result)
 	w.Write(byteRes)
 }
+func GetUsers(w http.ResponseWriter, r *http.Request) {
+	result := api.GetUsers(client, w, r, collection)
+	byteRes := helper.JsonMarshal(result)
+	w.Write(byteRes)
+
+}

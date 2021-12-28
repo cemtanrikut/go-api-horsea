@@ -168,8 +168,42 @@ func GetUser(email string, resp http.ResponseWriter, req *http.Request, client *
 	}
 }
 
-func GetUsers(client *mongo.Client, collection *mongo.Collection) api.Response {
-	return api.Response{}
+func GetUsers(client *mongo.Client, resp http.ResponseWriter, req *http.Request, collection *mongo.Collection) api.Response {
+	resp.Header().Set("Content-Type", "application/json")
+	var userList []User
+
+	cursor, err := collection.Find(context.TODO(), bson.D{{}})
+	if err != nil {
+		return api.Response{
+			Data:         http.StatusText(http.StatusNotFound),
+			StatusCode:   http.StatusNotFound,
+			ErrorMessage: err.Error(),
+		}
+	}
+
+	if err := cursor.All(context.TODO(), &userList); err != nil {
+		if err != nil {
+			return api.Response{
+				Data:         http.StatusText(http.StatusInternalServerError),
+				StatusCode:   http.StatusInternalServerError,
+				ErrorMessage: err.Error(),
+			}
+		}
+	}
+	jData, err := json.Marshal(userList)
+	if err != nil {
+		return api.Response{
+			Data:         http.StatusText(http.StatusInternalServerError),
+			StatusCode:   http.StatusInternalServerError,
+			ErrorMessage: err.Error(),
+		}
+	}
+
+	return api.Response{
+		Data:         string(jData),
+		StatusCode:   http.StatusAccepted,
+		ErrorMessage: "",
+	}
 }
 
 func CheckEmail(email string, client *mongo.Client, collection *mongo.Collection) bool {
