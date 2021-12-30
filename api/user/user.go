@@ -23,7 +23,9 @@ type User struct {
 	LastName   string    `json:"lastname"`
 	Email      string    `json:"email"`
 	Password   string    `json:"password"`
-	CreateDate time.Time `json:"createdate"`
+	CreateDate time.Time `json:"createdate", omitempty`
+	UpdateDate time.Time `json:"updatedate", omitempty`
+	IsDeleted  bool      `json:"isdeleted", omitempty`
 }
 
 //Hash pwd func
@@ -42,6 +44,7 @@ func SignUp(resp http.ResponseWriter, req *http.Request, client *mongo.Client, c
 	json.NewDecoder(req.Body).Decode(&user)
 	user.Password = base64.StdEncoding.EncodeToString([]byte(user.Password))
 	user.CreateDate = time.Now()
+	user.IsDeleted = false
 
 	checkEmail := CheckEmail(user.Email, client, collection)
 	if checkEmail {
@@ -71,7 +74,7 @@ func LogIn(resp http.ResponseWriter, req *http.Request, client *mongo.Client, ct
 
 	json.NewDecoder(req.Body).Decode(&user)
 
-	err := collection.FindOne(context.Background(), bson.M{"email": user.Email}).Decode(&dbUser)
+	err := collection.FindOne(context.Background(), bson.M{"email": user.Email, "isdeleted": false}).Decode(&dbUser)
 
 	if err != nil {
 		return helper.ReturnResponse(http.StatusInternalServerError, "", err.Error())
@@ -109,7 +112,7 @@ func GetUser(email string, resp http.ResponseWriter, req *http.Request, client *
 	resp.Header().Set("Content-Type", "application/json")
 	var user User
 
-	userData := collection.FindOne(context.Background(), bson.M{"email": user.Email})
+	userData := collection.FindOne(context.Background(), bson.M{"email": user.Email, "isdeleted": false})
 	err := userData.Decode(&user)
 
 	if err != nil {
@@ -128,7 +131,7 @@ func GetUsers(client *mongo.Client, resp http.ResponseWriter, req *http.Request,
 	resp.Header().Set("Content-Type", "application/json")
 	var userList []User
 
-	cursor, err := collection.Find(context.TODO(), bson.D{{}})
+	cursor, err := collection.Find(context.TODO(), bson.M{"isdeleted": false})
 	if err != nil {
 		return helper.ReturnResponse(http.StatusNotFound, "", err.Error())
 	}
@@ -139,6 +142,33 @@ func GetUsers(client *mongo.Client, resp http.ResponseWriter, req *http.Request,
 		}
 	}
 	jsonResult, err := json.Marshal(userList)
+	if err != nil {
+		return helper.ReturnResponse(http.StatusInternalServerError, "", err.Error())
+	}
+
+	return helper.ReturnResponse(http.StatusOK, string(jsonResult), "")
+
+}
+
+func UpdateUser(resp http.ResponseWriter, req *http.Request, collection *mongo.Collection) api.Response {
+	resp.Header().Set("Content-Type", "application/json")
+	var user User
+	user.Password = base64.StdEncoding.EncodeToString([]byte(user.Password))
+
+	json.NewDecoder(req.Body).Decode(&user)
+
+	updatedData, updateErr := collection.UpdateOne(context.Background(), bson.M{"email": user.Email, "isdeleted": false}, bson.D{{"$set",
+		bson.D{
+			{"firstname", user.FirstName},
+			{"lastname", user.LastName},
+			{"password", user.Password},
+			{"updatedate", time.Now()},
+		},
+	}})
+	if updateErr != nil {
+		return helper.ReturnResponse(http.StatusInternalServerError, "", updateErr.Error())
+	}
+	jsonResult, err := json.Marshal(updatedData)
 	if err != nil {
 		return helper.ReturnResponse(http.StatusInternalServerError, "", err.Error())
 	}

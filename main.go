@@ -29,6 +29,7 @@ func main() {
 	router.HandleFunc("/api/user/login", LogIn).Methods(http.MethodPost)
 	router.HandleFunc("/api/user/signup", SignUp).Methods(http.MethodPost)
 	router.HandleFunc("/api/user/{email}", GetUser).Methods(http.MethodGet)
+	router.HandleFunc("/api/user/update", UpdateUser).Methods(http.MethodPost)
 
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
@@ -53,5 +54,9 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 	result := api.GetUsers(client, w, r, collection)
 	byteRes := helper.JsonMarshal(result)
 	w.Write(byteRes)
-
+}
+func UpdateUser(w http.ResponseWriter, r *http.Request) {
+	result := api.UpdateUser(w, r, collection)
+	byteRes := helper.JsonMarshal(result)
+	w.Write(byteRes)
 }
