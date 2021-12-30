@@ -69,8 +69,7 @@ func SignUp(resp http.ResponseWriter, req *http.Request, client *mongo.Client, c
 
 func LogIn(resp http.ResponseWriter, req *http.Request, client *mongo.Client, ctx context.Context, collection *mongo.Collection) api.Response {
 	resp.Header().Set("Content-Type", "application/json")
-	var user User
-	var dbUser User
+	var user, dbUser User
 
 	json.NewDecoder(req.Body).Decode(&user)
 
@@ -153,7 +152,6 @@ func GetUsers(client *mongo.Client, resp http.ResponseWriter, req *http.Request,
 func UpdateUser(resp http.ResponseWriter, req *http.Request, collection *mongo.Collection) api.Response {
 	resp.Header().Set("Content-Type", "application/json")
 	var user User
-	user.Password = base64.StdEncoding.EncodeToString([]byte(user.Password))
 
 	json.NewDecoder(req.Body).Decode(&user)
 
@@ -175,6 +173,23 @@ func UpdateUser(resp http.ResponseWriter, req *http.Request, collection *mongo.C
 
 	return helper.ReturnResponse(http.StatusOK, string(jsonResult), "")
 
+}
+
+func DeleteUser(email string, resp http.ResponseWriter, req *http.Request, collection *mongo.Collection) api.Response {
+	resp.Header().Set("Content-Type", "application/json")
+	var user User
+
+	json.NewDecoder(req.Body).Decode(&user)
+
+	_, err := collection.UpdateOne(context.Background(), bson.M{"email": email, "isdeleted": false}, bson.D{{
+		Key:   "isdeleted",
+		Value: true,
+	}})
+	if err != nil {
+		return helper.ReturnResponse(http.StatusInternalServerError, "Something went wrong to Deleting User :(", err.Error())
+	}
+
+	return helper.ReturnResponse(http.StatusOK, "User deleted successfully!", "")
 }
 
 func CheckEmail(email string, client *mongo.Client, collection *mongo.Collection) bool {

@@ -30,6 +30,7 @@ func main() {
 	router.HandleFunc("/api/user/signup", SignUp).Methods(http.MethodPost)
 	router.HandleFunc("/api/user/{email}", GetUser).Methods(http.MethodGet)
 	router.HandleFunc("/api/user/update", UpdateUser).Methods(http.MethodPost)
+	router.HandleFunc("/api/user/delete/{email}", DeleteUser).Methods(http.MethodPost)
 
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
@@ -57,6 +58,13 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 }
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	result := api.UpdateUser(w, r, collection)
+	byteRes := helper.JsonMarshal(result)
+	w.Write(byteRes)
+}
+func DeleteUser(w http.ResponseWriter, r *http.Request) {
+	v := mux.Vars(r)
+	email := v["email"]
+	result := api.DeleteUser(email, w, r, collection)
 	byteRes := helper.JsonMarshal(result)
 	w.Write(byteRes)
 }
