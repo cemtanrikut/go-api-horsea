@@ -29,6 +29,7 @@ func main() {
 	router.HandleFunc("/api/user/login", LogIn).Methods(http.MethodPost)
 	router.HandleFunc("/api/user/signup", SignUp).Methods(http.MethodPost)
 	router.HandleFunc("/api/user/{email}", GetUser).Methods(http.MethodGet)
+	router.HandleFunc("/api/user/users", GetUsers).Methods(http.MethodGet)
 	router.HandleFunc("/api/user/update", UpdateUser).Methods(http.MethodPost)
 	router.HandleFunc("/api/user/delete/{email}", DeleteUser).Methods(http.MethodPost)
 

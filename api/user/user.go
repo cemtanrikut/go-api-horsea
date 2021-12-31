@@ -13,6 +13,7 @@ import (
 	"github.com/cemtanrikut/go-api-horsea/api"
 	"github.com/cemtanrikut/go-api-horsea/helper"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"golang.org/x/crypto/bcrypt"
@@ -23,9 +24,9 @@ type User struct {
 	LastName   string    `json:"lastname"`
 	Email      string    `json:"email"`
 	Password   string    `json:"password"`
-	CreateDate time.Time `json:"createdate", omitempty`
-	UpdateDate time.Time `json:"updatedate", omitempty`
-	IsDeleted  bool      `json:"isdeleted", omitempty`
+	CreateDate time.Time `json:"createdate"`
+	UpdateDate time.Time `json:"updatedate"`
+	IsDeleted  bool      `json:"isdeleted"`
 }
 
 //Hash pwd func
@@ -48,7 +49,7 @@ func SignUp(resp http.ResponseWriter, req *http.Request, client *mongo.Client, c
 
 	checkEmail := CheckEmail(user.Email, client, collection)
 	if checkEmail {
-		return helper.ReturnResponse(http.StatusUnauthorized, "", "This mail is already exist.")
+		return helper.ReturnResponse(http.StatusUnauthorized, "", "This mail address is already exist.")
 
 	}
 
@@ -111,14 +112,14 @@ func GetUser(email string, resp http.ResponseWriter, req *http.Request, client *
 	resp.Header().Set("Content-Type", "application/json")
 	var user User
 
-	userData := collection.FindOne(context.Background(), bson.M{"email": user.Email, "isdeleted": false})
+	userData := collection.FindOne(context.Background(), bson.M{"email": email, "isdeleted": false})
 	err := userData.Decode(&user)
 
 	if err != nil {
 		return helper.ReturnResponse(http.StatusNotFound, "", err.Error())
 	}
 
-	jsonResult, jsonError := json.Marshal(userData)
+	jsonResult, jsonError := json.Marshal(user)
 	if jsonError != nil {
 		return helper.ReturnResponse(http.StatusInternalServerError, "", err.Error())
 	}
@@ -130,7 +131,7 @@ func GetUsers(client *mongo.Client, resp http.ResponseWriter, req *http.Request,
 	resp.Header().Set("Content-Type", "application/json")
 	var userList []User
 
-	cursor, err := collection.Find(context.TODO(), bson.M{"isdeleted": false})
+	cursor, err := collection.Find(context.TODO(), bson.D{primitive.E{Key: "isdeleted", Value: false}})
 	if err != nil {
 		return helper.ReturnResponse(http.StatusNotFound, "", err.Error())
 	}
@@ -154,6 +155,8 @@ func UpdateUser(resp http.ResponseWriter, req *http.Request, collection *mongo.C
 	var user User
 
 	json.NewDecoder(req.Body).Decode(&user)
+
+	user.Password = base64.StdEncoding.EncodeToString([]byte(user.Password))
 
 	updatedData, updateErr := collection.UpdateOne(context.Background(), bson.M{"email": user.Email, "isdeleted": false}, bson.D{{"$set",
 		bson.D{
@@ -181,9 +184,10 @@ func DeleteUser(email string, resp http.ResponseWriter, req *http.Request, colle
 
 	json.NewDecoder(req.Body).Decode(&user)
 
-	_, err := collection.UpdateOne(context.Background(), bson.M{"email": email, "isdeleted": false}, bson.D{{
-		Key:   "isdeleted",
-		Value: true,
+	_, err := collection.UpdateOne(context.Background(), bson.M{"email": email, "isdeleted": false}, bson.D{{"$set",
+		bson.D{
+			{"isdeleted", true},
+		},
 	}})
 	if err != nil {
 		return helper.ReturnResponse(http.StatusInternalServerError, "Something went wrong to Deleting User :(", err.Error())
