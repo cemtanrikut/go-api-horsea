@@ -20,13 +20,13 @@ import (
 )
 
 type User struct {
-	FirstName  string    `json:"firstname"`
-	LastName   string    `json:"lastname"`
-	Email      string    `json:"email"`
-	Password   string    `json:"password"`
-	CreateDate time.Time `json:"createdate"`
-	UpdateDate time.Time `json:"updatedate"`
-	IsDeleted  bool      `json:"isdeleted"`
+	FirstName  string    `json:"firstname", bson:"firstname"`
+	LastName   string    `json:"lastname", bson:"lastname" `
+	Email      string    `json:"email", bson:"email"`
+	Password   string    `json:"password", bson:"password"`
+	CreateDate time.Time `json:"createdate", bson:"createdate"`
+	UpdateDate time.Time `json:"updatedate", bson:"updatedate"`
+	IsDeleted  bool      `json:"isdeleted", bson:"isdeleted"`
 }
 
 //Hash pwd func
@@ -126,12 +126,9 @@ func GetUsers(client *mongo.Client, resp http.ResponseWriter, req *http.Request,
 	resp.Header().Set("Content-Type", "application/json")
 	var userMList []primitive.M
 
-	cursor, err := collection.Find(context.Background(), bson.D{{
-		Key:   "isdeleted",
-		Value: false,
-	}})
+	cursor, err := collection.Find(context.Background(), bson.M{"isdeleted": false})
 	if err != nil {
-		return helper.ReturnResponse(http.StatusNotFound, "", err.Error())
+		return helper.ReturnResponse(http.StatusNotFound, "fdsdfgtgsfgssfg", err.Error())
 	}
 
 	for cursor.Next(context.Background()) {
