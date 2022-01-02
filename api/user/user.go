@@ -95,12 +95,7 @@ func LogIn(resp http.ResponseWriter, req *http.Request, client *mongo.Client, ct
 		return helper.ReturnResponse(http.StatusBadRequest, "", err.Error())
 	}
 
-	data, decodeErr := base64.StdEncoding.DecodeString(string(userPass))
-	if decodeErr != nil {
-		return helper.ReturnResponse(http.StatusInternalServerError, "", err.Error())
-	}
-
-	jsonResult, jsonError := json.Marshal(data)
+	jsonResult, jsonError := json.Marshal(user.Email)
 	if jsonError != nil {
 		return helper.ReturnResponse(http.StatusInternalServerError, "", err.Error())
 	}
@@ -129,19 +124,26 @@ func GetUser(email string, resp http.ResponseWriter, req *http.Request, client *
 
 func GetUsers(client *mongo.Client, resp http.ResponseWriter, req *http.Request, collection *mongo.Collection) api.Response {
 	resp.Header().Set("Content-Type", "application/json")
-	var userList []User
+	var userMList []primitive.M
 
-	cursor, err := collection.Find(context.TODO(), bson.D{primitive.E{Key: "isdeleted", Value: false}})
+	cursor, err := collection.Find(context.Background(), bson.D{{
+		Key:   "isdeleted",
+		Value: false,
+	}})
 	if err != nil {
 		return helper.ReturnResponse(http.StatusNotFound, "", err.Error())
 	}
 
-	if err := cursor.All(context.TODO(), &userList); err != nil {
-		if err != nil {
+	for cursor.Next(context.Background()) {
+		var user bson.M
+		if err = cursor.Decode(&user); err != nil {
 			return helper.ReturnResponse(http.StatusInternalServerError, "", err.Error())
 		}
+		userMList = append(userMList, user)
 	}
-	jsonResult, err := json.Marshal(userList)
+	defer cursor.Close(context.Background())
+
+	jsonResult, err := json.Marshal(userMList)
 	if err != nil {
 		return helper.ReturnResponse(http.StatusInternalServerError, "", err.Error())
 	}
