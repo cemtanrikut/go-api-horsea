@@ -1,7 +1,9 @@
 package api
 
-import "testing"
+import (
+	"testing"
+)
 
-func TestGetHash(t *testing.T) {
+func TestSignUp(t *testing.T) {
 
 }
