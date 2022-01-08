@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -15,8 +14,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
@@ -27,16 +24,6 @@ type User struct {
 	CreateDate time.Time `json:"createdate", bson:"createdate"`
 	UpdateDate time.Time `json:"updatedate", bson:"updatedate"`
 	IsDeleted  bool      `json:"isdeleted", bson:"isdeleted"`
-}
-
-//Hash pwd func
-func GetHash(pwd []byte) string {
-	hash, err := bcrypt.GenerateFromPassword(pwd, bcrypt.MinCost)
-	if err != nil {
-		fmt.Println("Hashing error: ", err)
-		log.Println(err)
-	}
-	return string(hash)
 }
 
 func SignUp(resp http.ResponseWriter, req *http.Request, client *mongo.Client, collection *mongo.Collection) api.Response {
