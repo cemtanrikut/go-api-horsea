@@ -165,7 +165,33 @@ func UpdateUser(resp http.ResponseWriter, req *http.Request, collection *mongo.C
 }
 
 func UpdatePassword(resp http.ResponseWriter, req *http.Request, collection *mongo.Collection, email string) api.Response {
-	return helper.ReturnResponse(http.StatusOK, "", "")
+	resp.Header().Set("Content-Type", "application/json")
+	var user User
+
+	userData := collection.FindOne(context.Background(), bson.M{"email": email, "isdeleted": false})
+	err := userData.Decode(&user)
+
+	user.Password = base64.StdEncoding.EncodeToString([]byte(user.Password))
+
+	if err != nil {
+		return helper.ReturnResponse(http.StatusNotFound, "", err.Error())
+	}
+
+	updatedData, updateErr := collection.UpdateOne(context.Background(), bson.M{"email": user.Email, "isdeleted": false}, bson.D{{"$set",
+		bson.D{
+			{"password", user.Password},
+		},
+	}})
+
+	if updateErr != nil {
+		return helper.ReturnResponse(http.StatusInternalServerError, "", updateErr.Error())
+	}
+	jsonResult, err := json.Marshal(updatedData)
+	if err != nil {
+		return helper.ReturnResponse(http.StatusInternalServerError, "", err.Error())
+	}
+
+	return helper.ReturnResponse(http.StatusOK, string(jsonResult), "")
 }
 
 func DeleteUser(email string, resp http.ResponseWriter, req *http.Request, collection *mongo.Collection) api.Response {
