@@ -164,6 +164,10 @@ func UpdateUser(resp http.ResponseWriter, req *http.Request, collection *mongo.C
 
 }
 
+func UpdatePassword(resp http.ResponseWriter, req *http.Request, collection *mongo.Collection, email string) api.Response {
+	return helper.ReturnResponse(http.StatusOK, "", "")
+}
+
 func DeleteUser(email string, resp http.ResponseWriter, req *http.Request, collection *mongo.Collection) api.Response {
 	resp.Header().Set("Content-Type", "application/json")
 	var user User
