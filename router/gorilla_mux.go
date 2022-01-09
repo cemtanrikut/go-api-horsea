@@ -59,7 +59,7 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 }
 func updatePassword(w http.ResponseWriter, r *http.Request) {
 	email := mux.Vars(r)["email"]
-	result := api.UpdatePasswor(w, r, userCollection, email)
+	result := api.UpdatePassword(w, r, userCollection, email)
 	byteRes := helper.JsonMarshal(result)
 	w.Write(byteRes)
 }
